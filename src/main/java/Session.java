@@ -3,23 +3,25 @@ package main.java;
 import java.util.ArrayList;
 
 public class Session {
-    private int sessionID;
+    private int sessionId;
     private ArrayList<Turn> turns;
 
-    public Session(int sessionID) {
-        this.sessionID = sessionID;
-    }
-
-    public void addMove(Turn turn) {
+    public Session(int sessionId, Turn turn) {
+        this.sessionId = sessionId;
+        this.turns = new ArrayList<>();
         this.turns.add(turn);
     }
 
-    public int getSessionID() {
-        return sessionID;
+    public void addTurn(Turn turn) {
+        this.turns.add(turn);
     }
 
-    public void setSessionID(int sessionID) {
-        this.sessionID = sessionID;
+    public int getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(int sessionId) {
+        this.sessionId = sessionId;
     }
 
     public ArrayList<Turn> getTurns() {

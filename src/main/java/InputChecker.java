@@ -33,27 +33,18 @@ public class InputChecker {
     public static boolean isNumber(String elem) {
         Pattern pattern = Pattern.compile("^[0-9]+$");
         Matcher matcher = pattern.matcher(elem);
-        if (!matcher.matches()) {
-            return false;
-        }
-        return true;
+        return matcher.matches();
     }
 
     public static boolean isCorrectActionFormat(String elem) {
         Pattern pattern = Pattern.compile("^[PD] [A-Za-z]+$");
         Matcher matcher = pattern.matcher(elem);
-        if (!matcher.matches()) {
-            return false;
-        }
-        return true;
+        return matcher.matches();
     }
 
     public static boolean isCorrectHandFormat(String elem) {
-        Pattern pattern = Pattern.compile("^-|(?:(?:(?:[2-9JQKAjqka]|10)[HDSChdsc]-)+(?:[2-9JQKAjqka]|10)[HDSChdsc])$");
+        Pattern pattern = Pattern.compile("^-|((?:(?:[2-9JQKAjqka]|10)[HDSChdsc]-)+(?:((?:[2-9JQKAjqka]|10)[HDSChdsc])|\\?))$");
         Matcher matcher = pattern.matcher(elem);
-        if (!matcher.matches()) {
-            return false;
-        }
-        return true;
+        return matcher.matches();
     }
 }
