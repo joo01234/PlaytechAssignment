@@ -7,7 +7,7 @@ public class Reader {
     private BufferedReader reader;
     private String lastLine;
 
-    public void readFile(String path) {
+    public void readFromFile(String path) {
         try {
             reader = new BufferedReader(new FileReader(path));
         } catch (IOException e) {
@@ -22,6 +22,14 @@ public class Reader {
             printError(e);
         }
         return lastLine;
+    }
+
+    public void close() {
+        try {
+            reader.close();
+        } catch (IOException e) {
+            printError(e);
+        }
     }
 
     private void printError(IOException e) {

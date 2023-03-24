@@ -47,4 +47,10 @@ public class InputChecker {
         Matcher matcher = pattern.matcher(elem);
         return matcher.matches();
     }
+
+    public static boolean isCorrectCardFormat(String elem) {
+        Pattern pattern = Pattern.compile("^(?:(?:[2-9JQKAjqka]|10)[HDSChdsc]|\\?)$");
+        Matcher matcher = pattern.matcher(elem);
+        return matcher.matches();
+    }
 }
