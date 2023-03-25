@@ -4,16 +4,24 @@ import java.util.ArrayList;
 
 public class Session {
     private int sessionId;
-    private ArrayList<Turn> turns;
+    private ArrayList<Turn> turns = new ArrayList<>();
+    private boolean hasPlayer = false;
 
     public Session(int sessionId, Turn turn) {
         this.sessionId = sessionId;
-        this.turns = new ArrayList<>();
         this.turns.add(turn);
     }
 
     public void addTurn(Turn turn) {
         this.turns.add(turn);
+    }
+
+    public boolean hasPlayer() {
+        return hasPlayer;
+    }
+
+    public void setHasPlayer(boolean hasPlayer) {
+        this.hasPlayer = hasPlayer;
     }
 
     public int getSessionId() {

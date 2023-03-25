@@ -1,10 +1,15 @@
 package main.java;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 public class Turn {
     private int timestamp, playerId, dealerHandValue, playerHandValue;
-    private String action, dealerHand, playerHand;
+    private String action, dealerHand, playerHand, rawLine;
 
-    public Turn(int timestamp, int playerId, String action, String dealerHand, String playerHand) {
+    public Turn(int timestamp, int playerId, String action, String dealerHand, String playerHand, String rawLine) {
         this.timestamp = timestamp;
         this.playerId = playerId;
         this.action = action;
@@ -12,6 +17,15 @@ public class Turn {
         this.playerHand = playerHand;
         this.dealerHandValue = findValue(dealerHand);
         this.playerHandValue = findValue(playerHand);
+        this.rawLine = rawLine;
+    }
+
+    public String getRawLine() {
+        return rawLine;
+    }
+
+    public void setRawLine(String rawLine) {
+        this.rawLine = rawLine;
     }
 
     public int getDealerHandValue() {
@@ -72,41 +86,36 @@ public class Turn {
         this.playerHandValue = findValue(playerHand);
     }
 
-    public static boolean isValidTurn(Turn turn) {
-        if (turn.getDealerHandValue() > 21 || turn.getPlayerHandValue() > 21) {
-            if (!turn.getAction().split(" ")[1].equals("Win")) {
-                return false;
+    public boolean hasDuplicateCards() {
+        String[] dealerHandArr = this.dealerHand.split("-");
+        String[] playerHandArr = this.playerHand.split("-");
+        for (int i = 0; i < dealerHandArr.length; i++) {
+            dealerHandArr[i] = dealerHandArr[i].toLowerCase();
+        }
+        for (int i = 0; i < playerHandArr.length; i++) {
+            playerHandArr[i] = playerHandArr[i].toLowerCase();
+        }
+        Set<String> dealerHandSet = new HashSet<>();
+        Set<String> playerHandSet = new HashSet<>();
+        Collections.addAll(dealerHandSet, dealerHandArr);
+        Collections.addAll(playerHandSet, playerHandArr);
+        if (dealerHandSet.size() < dealerHandArr.length) {
+            return true;
+        }
+        if (playerHandSet.size() < playerHandArr.length) {
+            return true;
+        }
+        for (String dealerCard : dealerHandArr) {
+            if (Arrays.asList(playerHandArr).contains(dealerCard)) {
+                return true;
             }
         }
-        switch (turn.getAction()) {
-            case "D Hit":
-                if (turn.getDealerHandValue() >= 17) {
-                    return false;
-                }
-                if (hasMysteryCard(turn.getDealerHand())) {
-                    return false;
-                }
-                break;
-
-            case "D Show":
-                if (!hasMysteryCard(turn.getDealerHand())) {
-                    return false;
-                }
-                break;
-
-            case "P Win":
-                if (turn.getPlayerHandValue() < turn.getDealerHandValue()) {
-                    return false;
-                }
-                break;
-
-            case "P Lose":
-                if (turn.getPlayerHandValue() >= turn.getDealerHandValue()) {
-                    return false;
-                }
-                break;
+        for (String playerCard : playerHandArr) {
+            if (Arrays.asList(dealerHandArr).contains(playerCard)) {
+                return true;
+            }
         }
-        return true;
+        return false;
     }
 
     public static boolean hasMysteryCard(String hand) {
@@ -123,7 +132,7 @@ public class Turn {
         String[] handArr = hand.split("-");
         int total = 0;
         for (String card : handArr) {
-            if (!InputChecker.isCorrectCardFormat(card)) {
+            if (!FormatChecker.isCorrectCardFormat(card)) {
                 return -1;
             }
             char firstChar = card.charAt(0);
@@ -136,10 +145,18 @@ public class Turn {
             else if (Character.isDigit(firstChar)) {
                 total += Character.getNumericValue(firstChar);
             }
+            else if (firstChar == 'A') {
+                total += 11;
+            }
             else {
                 total += 10;
             }
         }
         return total;
+    }
+
+    public static int findCardAmount(String hand) {
+        String[] handArr = hand.split("-");
+        return handArr.length;
     }
 }

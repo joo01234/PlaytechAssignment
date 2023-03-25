@@ -6,13 +6,19 @@ import main.java.utils.Writer;
 import java.util.*;
 
 public class Analyser {
+    /**
+     * This is the main method of the program, which reads game data from a file, constructs sessions from the data,
+     * sorts the turns of each session chronologically, and analyzes the sessions to identify invalid turns.
+     *
+     * @param args an array of command-line arguments that are not used in this program
+     */
     public static void main(String[] args) {
         Reader r = new Reader();
         r.readFromFile("src/main/resources/game_data.txt");
         Map<Integer, Session> sessionMap = new TreeMap<>();
         String line;
         while ((line=r.readLine()) != null) {
-            if (!InputChecker.isCorrectLineFormat(line)) {
+            if (!FormatChecker.isCorrectLineFormat(line)) {
                 continue;
             }
             addToSession(sessionMap, line);
@@ -20,24 +26,28 @@ public class Analyser {
         r.close();
         sortTurns(sessionMap);
         analyseSessions(sessionMap);
-        /*for (Map.Entry<Integer, Session> e : sessionMap.entrySet()) {
-            ArrayList<Turn> turns = e.getValue().getTurns();
-            for (Turn turn : turns) {
-                System.out.println(turn.getDealerHandValue() + "," + turn.getPlayerHandValue() + "," + turn.getTimestamp() + "," + e.getValue() .getSessionId() + "," + turn.getAction() + "," + turn.getDealerHand() + "," + turn.getPlayerHand());
-            }
-        }*/
     }
 
-    public static void analyseSessions(Map<Integer, Session> sessionMap) {
+    /**
+     * Analyses the turns in each session of the provided session map and writes any invalid turns to a file.
+     * An invalid turn is a turn that is not allowed according to the game rules or the session state.
+     *
+     * @param sessionMap the map of sessions to be analyzed
+     * @throws NullPointerException if the sessionMap parameter is null
+     */
+    private static void analyseSessions(Map<Integer, Session> sessionMap) {
         Writer w = new Writer();
         w.writeToFile("analyzer_results.txt");
         for (Map.Entry<Integer, Session> e : sessionMap.entrySet()) {
             for (Turn turn : e.getValue().getTurns()) {
-                if (!Turn.isValidTurn(turn)) {
-                    String line = turn.getTimestamp() + "," + e.getValue().getSessionId() + "," + turn.getPlayerId() + ","
-                            + turn.getAction() + "," + turn.getDealerHand() + "," + turn.getPlayerHand() + "," + turn.getDealerHandValue() + "," + turn.getPlayerHandValue();
-                    System.out.println(line);
-                    w.writeLine(line);
+                if (turn.getAction().equals("P Joined")) {
+                    e.getValue().setHasPlayer(true);
+                } else if (turn.getAction().equals("P Left")) {
+                    e.getValue().setHasPlayer(false);
+                }
+                if (!isValidTurn(turn, e.getValue().hasPlayer())) {
+                    System.out.println(turn.getRawLine());
+                    w.writeLine(turn.getRawLine());
                     break;
                 }
             }
@@ -45,7 +55,95 @@ public class Analyser {
         w.close();
     }
 
-    public static void addToSession(Map<Integer, Session> sessionMap, String line) {
+    /**
+     * Determines if the given turn is valid based on the rules of the game.
+     *
+     * @param turn      the turn to validate
+     * @param hasPlayer indicates whether the session has a player
+     * @return true if the turn is valid, false otherwise
+     * @throws NullPointerException if turn is null
+     */
+    private static boolean isValidTurn(Turn turn, boolean hasPlayer) {
+        if (turn.hasDuplicateCards()) {
+            return false;
+        }
+        if (turn.getDealerHandValue() > 21 && turn.getPlayerHandValue() > 21) {
+            return false;
+        } else if (turn.getDealerHandValue() > 21) {
+            if (!turn.getAction().equals("P Win")) {
+                return false;
+            }
+        } else if (turn.getPlayerHandValue() > 21) {
+            if (!turn.getAction().equals("P Lose")) {
+                return false;
+            }
+        }
+        if (turn.getDealerHandValue() == -1 || turn.getPlayerHandValue() == -1) {
+            return false;
+        }
+        if (hasPlayer) {
+            if (turn.getDealerHandValue() == 0 || turn.getPlayerHandValue() == 0) {
+                return false;
+            }
+        }
+        switch (turn.getAction()) {
+            case "P Joined":
+            case "D Redeal":
+                if (Turn.findCardAmount(turn.getDealerHand()) > 2 || Turn.findCardAmount(turn.getPlayerHand()) > 2) {
+                    return false;
+                }
+                if (!Turn.hasMysteryCard(turn.getDealerHand())) {
+                    return false;
+                }
+                break;
+
+            case "D Hit":
+                if (turn.getDealerHandValue() >= 17) {
+                    return false;
+                }
+                if (Turn.hasMysteryCard(turn.getDealerHand())) {
+                    return false;
+                }
+                break;
+
+            case "D Show":
+                if (!Turn.hasMysteryCard(turn.getDealerHand())) {
+                    return false;
+                }
+                break;
+
+            case "P Win":
+                if (turn.getDealerHandValue() < 17) {
+                    return false;
+                }
+                if (turn.getPlayerHandValue() < turn.getDealerHandValue()) {
+                    return false;
+                }
+                break;
+
+            case "P Lose":
+                if (turn.getPlayerHandValue() >= turn.getDealerHandValue()) {
+                    return false;
+                }
+                break;
+
+            case "P Hit":
+                if (turn.getPlayerHandValue() >= 20) {
+                    return false;
+                }
+                break;
+        }
+        return true;
+    }
+
+    /**
+     * Adds a Turn object to a Session object in the provided sessionMap.
+     *
+     * @param sessionMap The Map containing all Session objects.
+     * @param line The String representing a Turn object.
+     * @throws NullPointerException if sessionMap or line is null.
+     */
+    private static void addToSession(Map<Integer, Session> sessionMap, String line) {
         String[] lineArr = line.split(",");
         int sessionId = 0;
         try {
@@ -63,8 +161,15 @@ public class Analyser {
         session.addTurn(turn);
     }
 
-
-    public static Turn createTurn(String[] lineArr) {
+    /**
+     * Creates a new Turn object from a String array containing the necessary data.
+     * The data is expected to be in the format: [timestamp, sessionId, playerId, action, playerHand, dealerHand]
+     *
+     * @param lineArr the String array containing the data needed to create a Turn object
+     * @return a new Turn object containing the data from the input String array
+     * @throws NumberFormatException if the timestamp or playerId cannot be parsed as integers
+     */
+    private static Turn createTurn(String[] lineArr) {
         Turn turn;
         int timestamp = 0, playerId = 0;
         try {
@@ -73,11 +178,18 @@ public class Analyser {
         } catch (NumberFormatException e) {
             e.printStackTrace();
         }
-        turn = new Turn(timestamp, playerId, lineArr[3], lineArr[4], lineArr[5]);
+        String line = String.join(",", lineArr);
+        turn = new Turn(timestamp, playerId, lineArr[3], lineArr[4], lineArr[5], line);
         return turn;
     }
 
-    public static void sortTurns(Map<Integer, Session> sessionMap) {
+    /**
+     * Sorts the turns in the given session map based on their timestamp.
+     *
+     * @param sessionMap the map of session IDs to sessions
+     * @throws NullPointerException if the sessionMap is null
+     */
+    private static void sortTurns(Map<Integer, Session> sessionMap) {
         for (Map.Entry<Integer, Session> e : sessionMap.entrySet()) {
             ArrayList<Turn> turns = e.getValue().getTurns();
             turns.sort(Comparator.comparingInt(Turn::getTimestamp));
