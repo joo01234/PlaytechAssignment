@@ -31,20 +31,22 @@ public class Analyser {
      * Analyses the turns in each session of the provided session map and writes any invalid turns to a file.
      * An invalid turn is a turn that is not allowed according to the game rules or the session state.
      *
-     * @param sessionMap the map of sessions to be analyzed
+     * @param sessionMap the map of sessions to be analysed
      * @throws NullPointerException if the sessionMap parameter is null
      */
     private static void analyseSessions(Map<Integer, Session> sessionMap) {
         Writer w = new Writer("analyzer_results.txt");
         for (Map.Entry<Integer, Session> e : sessionMap.entrySet()) {
             for (Turn turn : e.getValue().getTurns()) {
-                if (turn.getAction().equals("P Joined")) {
+                if (turn.getAction().equals("p joined")) {
                     e.getValue().setHasPlayer(true);
-                } else if (turn.getAction().equals("P Left")) {
+                } else if (turn.getAction().equals("p left")) {
+                    if (!e.getValue().hasPlayer()) {
+                        w.writeLine(turn.getRawLine());
+                    }
                     e.getValue().setHasPlayer(false);
                 }
                 if (!isValidTurn(turn, e.getValue().hasPlayer())) {
-                    System.out.println(turn.getRawLine());
                     w.writeLine(turn.getRawLine());
                     break;
                 }
@@ -68,11 +70,11 @@ public class Analyser {
         if (turn.getDealerHandValue() > 21 && turn.getPlayerHandValue() > 21) {
             return false;
         } else if (turn.getDealerHandValue() > 21) {
-            if (!turn.getAction().equals("P Win")) {
+            if (!turn.getAction().equals("p win")) {
                 return false;
             }
         } else if (turn.getPlayerHandValue() > 21) {
-            if (!turn.getAction().equals("P Lose")) {
+            if (!turn.getAction().equals("p lose")) {
                 return false;
             }
         }
