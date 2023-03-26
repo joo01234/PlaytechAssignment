@@ -7,6 +7,12 @@ public class Session {
     private ArrayList<Turn> turns = new ArrayList<>();
     private boolean hasPlayer = false;
 
+    /**
+     * Constructs a new session with the specified session ID and turn.
+     *
+     * @param sessionId the ID of the session
+     * @param turn the first turn to add to the session
+     */
     public Session(int sessionId, Turn turn) {
         this.sessionId = sessionId;
         this.turns.add(turn);

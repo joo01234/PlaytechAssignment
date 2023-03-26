@@ -13,8 +13,7 @@ public class Analyser {
      * @param args an array of command-line arguments that are not used in this program
      */
     public static void main(String[] args) {
-        Reader r = new Reader();
-        r.readFromFile("src/main/resources/game_data.txt");
+        Reader r = new Reader("src/main/resources/game_data.txt");
         Map<Integer, Session> sessionMap = new TreeMap<>();
         String line;
         while ((line=r.readLine()) != null) {
@@ -36,8 +35,7 @@ public class Analyser {
      * @throws NullPointerException if the sessionMap parameter is null
      */
     private static void analyseSessions(Map<Integer, Session> sessionMap) {
-        Writer w = new Writer();
-        w.writeToFile("analyzer_results.txt");
+        Writer w = new Writer("analyzer_results.txt");
         for (Map.Entry<Integer, Session> e : sessionMap.entrySet()) {
             for (Turn turn : e.getValue().getTurns()) {
                 if (turn.getAction().equals("P Joined")) {
@@ -87,32 +85,32 @@ public class Analyser {
             }
         }
         switch (turn.getAction()) {
-            case "P Joined":
-            case "D Redeal":
-                if (Turn.findCardAmount(turn.getDealerHand()) > 2 || Turn.findCardAmount(turn.getPlayerHand()) > 2) {
+            case "p joined":
+            case "d redeal":
+                if (Turn.findCardAmount(turn.getDealerHand()) != 2 || Turn.findCardAmount(turn.getPlayerHand()) != 2) {
                     return false;
                 }
-                if (!Turn.hasMysteryCard(turn.getDealerHand())) {
+                if (!Turn.hasUnknownCard(turn.getDealerHand())) {
                     return false;
                 }
                 break;
 
-            case "D Hit":
+            case "d hit":
                 if (turn.getDealerHandValue() >= 17) {
                     return false;
                 }
-                if (Turn.hasMysteryCard(turn.getDealerHand())) {
+                if (Turn.hasUnknownCard(turn.getDealerHand())) {
                     return false;
                 }
                 break;
 
-            case "D Show":
-                if (!Turn.hasMysteryCard(turn.getDealerHand())) {
+            case "d show":
+                if (!Turn.hasUnknownCard(turn.getDealerHand())) {
                     return false;
                 }
                 break;
 
-            case "P Win":
+            case "p win":
                 if (turn.getDealerHandValue() < 17) {
                     return false;
                 }
@@ -121,13 +119,13 @@ public class Analyser {
                 }
                 break;
 
-            case "P Lose":
+            case "p lose":
                 if (turn.getPlayerHandValue() >= turn.getDealerHandValue()) {
                     return false;
                 }
                 break;
 
-            case "P Hit":
+            case "p hit":
                 if (turn.getPlayerHandValue() >= 20) {
                     return false;
                 }
@@ -179,7 +177,7 @@ public class Analyser {
             e.printStackTrace();
         }
         String line = String.join(",", lineArr);
-        turn = new Turn(timestamp, playerId, lineArr[3], lineArr[4], lineArr[5], line);
+        turn = new Turn(timestamp, playerId, lineArr[3].toLowerCase(), lineArr[4], lineArr[5], line);
         return turn;
     }
 
